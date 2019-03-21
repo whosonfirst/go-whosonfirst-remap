@@ -13,6 +13,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -20,6 +21,7 @@ func main() {
 
 	target := flag.String("target", "/usr/local/data", "where to write new (remapped) WOF files")
 	mode := flag.String("mode", "repo", "...")
+	dryrun := flag.Bool("dryrun", false, "...")
 
 	flag.Parse()
 
@@ -43,35 +45,73 @@ func main() {
 			return err
 		}
 
+		new_path := ""
+		new_repo := ""
+
 		if !is_principal {
-			// PLEASE WRITE ME, YEAH
+
+			f, err := feature.LoadGeoJSONFeatureFromReader(fh)
+
+			if err != nil {
+				return err
+			}
+
+			str_id := f.Id()
+
+			id, err := strconv.ParseInt(str_id, 10, 64)
+
+			if err != nil {
+				return err
+			}
+
+			tree, err := uri.Id2Path(id)
+
+			if err != nil {
+				return err
+			}
+
+			new_repo = "whosonfirst-data-alt"
+
+			new_root := filepath.Join(abs_target, new_repo)
+			new_data := filepath.Join(new_root, "data")
+
+			new_parent := filepath.Join(new_data, tree)
+			new_path = filepath.Join(new_parent, filepath.Base(path))
+
+		} else {
+
+			f, err := feature.LoadFeatureFromReader(fh)
+
+			if err != nil {
+				return err
+			}
+
+			id := whosonfirst.Id(f)
+
+			country := whosonfirst.Country(f)
+			country = strings.ToLower(country)
+
+			if country == "" {
+				country = "xy" // xx ?
+			}
+
+			new_repo = fmt.Sprintf("whosonfirst-data-%s", country)
+
+			new_root := filepath.Join(abs_target, new_repo)
+			new_data := filepath.Join(new_root, "data")
+
+			p, err := uri.Id2AbsPath(new_data, id)
+
+			if err != nil {
+				return err
+			}
+
+			new_path = p
+		}
+
+		if *dryrun {
+			log.Printf("move %s to %s\n", path, new_path)
 			return nil
-		}
-
-		f, err := feature.LoadFeatureFromReader(fh)
-
-		if err != nil {
-			return err
-		}
-
-		id := whosonfirst.Id(f)
-
-		country := whosonfirst.Country(f)
-		country = strings.ToLower(country)
-
-		if country == "" {
-			country = "xy" // xx ?
-		}
-
-		new_repo := fmt.Sprintf("whosonfirst-data-%s", country)
-
-		new_root := filepath.Join(abs_target, new_repo)
-		new_data := filepath.Join(new_root, "data")
-
-		new_path, err := uri.Id2AbsPath(new_data, id)
-
-		if err != nil {
-			return err
 		}
 
 		path_root := filepath.Dir(new_path)
@@ -108,6 +148,8 @@ func main() {
 		if err != nil {
 			return err
 		}
+
+		// update wof:repo in new_path here...
 
 		return nil
 	}
