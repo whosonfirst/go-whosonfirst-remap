@@ -1,21 +1,37 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
+	"github.com/tidwall/sjson"
+	"github.com/whosonfirst/go-whosonfirst-geojson-v2"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/feature"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/properties/whosonfirst"
 	"github.com/whosonfirst/go-whosonfirst-index"
 	"github.com/whosonfirst/go-whosonfirst-index/utils"
 	"github.com/whosonfirst/go-whosonfirst-uri"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 )
+
+func CountryFromFeature(f geojson.Feature) string {
+
+	country := whosonfirst.Country(f)
+	country = strings.ToLower(country)
+
+	if country == "" {
+		country = "xy" // xx ?
+	}
+
+	return country
+}
 
 func main() {
 
@@ -53,9 +69,9 @@ func main() {
 			ext := filepath.Ext(path)
 
 			if ext != ".geojson" {
-				return nil	// eg remarks.md files
+				return nil // eg remarks.md files
 			}
-			
+
 			f, err := feature.LoadGeoJSONFeatureFromReader(fh)
 
 			if err != nil {
@@ -77,7 +93,19 @@ func main() {
 				return err
 			}
 
-			new_repo = "whosonfirst-data-alt"
+			root := filepath.Dir(path)
+
+			principal_fname := fmt.Sprintf("%d.geojson", id)
+			principal_path := filepath.Join(root, principal_fname)
+
+			principal_f, err := feature.LoadFeatureFromFile(principal_path)
+
+			if err != nil {
+				return err
+			}
+
+			country := CountryFromFeature(principal_f)
+			new_repo = fmt.Sprintf("whosonfirst-data-%s", country)
 
 			new_root := filepath.Join(abs_target, new_repo)
 			new_data := filepath.Join(new_root, "data")
@@ -94,20 +122,13 @@ func main() {
 				return err
 			}
 
-			id := whosonfirst.Id(f)
-
-			country := whosonfirst.Country(f)
-			country = strings.ToLower(country)
-
-			if country == "" {
-				country = "xy" // xx ?
-			}
-
+			country := CountryFromFeature(f)
 			new_repo = fmt.Sprintf("whosonfirst-data-%s", country)
 
 			new_root := filepath.Join(abs_target, new_repo)
 			new_data := filepath.Join(new_root, "data")
 
+			id := whosonfirst.Id(f)
 			p, err := uri.Id2AbsPath(new_data, id)
 
 			if err != nil {
@@ -115,6 +136,26 @@ func main() {
 			}
 
 			new_path = p
+		}
+
+		in, err := os.Open(path)
+
+		if err != nil {
+			return err
+		}
+
+		defer in.Close()
+
+		body, err := ioutil.ReadAll(in)
+
+		if err != nil {
+			return err
+		}
+
+		body, err = sjson.SetBytes(body, "properties.wof:repo", new_repo)
+
+		if err != nil {
+			return err
 		}
 
 		if *dryrun {
@@ -135,14 +176,6 @@ func main() {
 			}
 		}
 
-		in, err := os.Open(path)
-
-		if err != nil {
-			return err
-		}
-
-		defer in.Close()
-
 		out, err := os.OpenFile(new_path, os.O_RDWR|os.O_CREATE, 0644)
 
 		if err != nil {
@@ -151,13 +184,14 @@ func main() {
 
 		defer out.Close()
 
+		r := bytes.NewReader(body)
+		fh = ioutil.NopCloser(r)
+
 		_, err = io.Copy(out, in)
 
 		if err != nil {
 			return err
 		}
-
-		// update wof:repo in new_path here...
 
 		return nil
 	}
