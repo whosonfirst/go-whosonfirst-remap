@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2"
 	"github.com/whosonfirst/go-whosonfirst-geojson-v2/feature"
@@ -38,6 +40,7 @@ func main() {
 	target := flag.String("target", "/usr/local/data", "where to write new (remapped) WOF files")
 	mode := flag.String("mode", "repo", "...")
 	dryrun := flag.Bool("dryrun", false, "...")
+	verbose := flag.Bool("verbose", false, "...")
 
 	flag.Parse()
 
@@ -158,8 +161,23 @@ func main() {
 			return err
 		}
 
+		rsp := gjson.GetBytes(body, "properties.wof:repo")
+
+		if !rsp.Exists() {
+			msg := fmt.Sprintf("Unable to find wof:repo in %s", path)
+			return errors.New(msg)
+		}
+
+		if rsp.String() != new_repo {
+			msg := fmt.Sprintf("Failed to set wof:repo (%s) in %s", new_repo, path)
+			return errors.New(msg)
+		}
+
+		if *verbose {
+			log.Printf("move (%s) %s to %s\n", rsp.String(), path, new_path)
+		}
+
 		if *dryrun {
-			log.Printf("move %s to %s\n", path, new_path)
 			return nil
 		}
 
@@ -185,9 +203,8 @@ func main() {
 		defer out.Close()
 
 		r := bytes.NewReader(body)
-		fh = ioutil.NopCloser(r)
 
-		_, err = io.Copy(out, in)
+		_, err = io.Copy(out, r)
 
 		if err != nil {
 			return err
