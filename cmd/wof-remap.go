@@ -50,10 +50,17 @@ func main() {
 
 		if !is_principal {
 
+			ext := filepath.Ext(path)
+
+			if ext != ".geojson" {
+				return nil	// eg remarks.md files
+			}
+			
 			f, err := feature.LoadGeoJSONFeatureFromReader(fh)
 
 			if err != nil {
-				return err
+				log.Printf("FAILED TO LOAD %s %s\n", path, err)
+				return nil
 			}
 
 			str_id := f.Id()
@@ -83,6 +90,7 @@ func main() {
 			f, err := feature.LoadFeatureFromReader(fh)
 
 			if err != nil {
+				log.Printf("FAILED TO LOAD %s %s\n", path, err)
 				return err
 			}
 
