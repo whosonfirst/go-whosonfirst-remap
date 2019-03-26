@@ -1,5 +1,10 @@
 package main
 
+// contract anything that can be indexed with go-whosonfirst-index
+// in to line-separated geojson (20190326/thisisaaronland)
+
+// THIS IS WORK IN PROGRESS SO ALL THE USUAL CAVEATS APPLY
+
 import (
 	"context"
 	"flag"
@@ -19,7 +24,7 @@ func main() {
 	mode := flag.String("mode", "repo", "...")
 	dryrun := flag.Bool("dryrun", false, "...")
 	verbose := flag.Bool("verbose", false, "...")
-	stdout := flag.Bool("stdout", false, "...")	
+	stdout := flag.Bool("stdout", false, "...")
 
 	flag.Parse()
 
@@ -32,13 +37,13 @@ func main() {
 	if *stdout {
 		writers = append(writers, os.Stdout)
 	}
-	
+
 	if len(writers) == 0 {
 		log.Fatal("Nowhere to write")
 	}
-	
+
 	wr := io.MultiWriter(writers...)
-	
+
 	cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
 
 		path, err := index.PathForContext(ctx)
@@ -62,17 +67,17 @@ func main() {
 		if *verbose {
 			log.Printf("write %s\n", path)
 		}
-		
+
 		if *dryrun {
 			return nil
 		}
-		
-		_, err  = wr.Write(f.Bytes())
 
-		if err != nil{
+		_, err = wr.Write(f.Bytes())
+
+		if err != nil {
 			return err
 		}
-		
+
 		return nil
 	}
 
@@ -83,15 +88,15 @@ func main() {
 	}
 
 	t1 := time.Now()
-	
+
 	for _, path := range flag.Args() {
 
 		ta := time.Now()
-		
+
 		err := i.IndexPath(path)
 
 		log.Printf("time to contract %s %v\n", path, time.Since(ta))
-		
+
 		if err != nil {
 			log.Fatal(err)
 		}

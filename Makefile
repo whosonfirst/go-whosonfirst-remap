@@ -19,7 +19,7 @@ deps:
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-index"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-geojson-v2"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-uri"
-	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-uri"
+	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-export"
 	@GOPATH=$(GOPATH) go get -u "github.com/tidwall/gjson"
 	@GOPATH=$(GOPATH) go get -u "github.com/tidwall/sjson"
 
@@ -36,3 +36,4 @@ fmt:
 bin:	self
 	@GOPATH=$(GOPATH) go build -o bin/wof-remap cmd/wof-remap.go
 	@GOPATH=$(GOPATH) go build -o bin/wof-contract cmd/wof-contract.go
+	@GOPATH=$(GOPATH) go build -o bin/wof-expand cmd/wof-expand.go
