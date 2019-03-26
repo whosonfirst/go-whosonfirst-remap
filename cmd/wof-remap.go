@@ -23,6 +23,14 @@ import (
 	"strings"
 )
 
+func RepoFromFeature(f geojson.Feature) string {
+
+	country := CountryFromFeature(f)
+	repo := fmt.Sprintf("whosonfirst-data-admin-%s", country)
+
+	return repo
+}
+
 func CountryFromFeature(f geojson.Feature) string {
 
 	country := whosonfirst.Country(f)
@@ -107,8 +115,7 @@ func main() {
 				return err
 			}
 
-			country := CountryFromFeature(principal_f)
-			new_repo = fmt.Sprintf("whosonfirst-data-%s", country)
+			new_repo = RepoFromFeature(principal_f)
 
 			new_root := filepath.Join(abs_target, new_repo)
 			new_data := filepath.Join(new_root, "data")
@@ -125,8 +132,7 @@ func main() {
 				return err
 			}
 
-			country := CountryFromFeature(f)
-			new_repo = fmt.Sprintf("whosonfirst-data-%s", country)
+			new_repo = RepoFromFeature(f)
 
 			new_root := filepath.Join(abs_target, new_repo)
 			new_data := filepath.Join(new_root, "data")

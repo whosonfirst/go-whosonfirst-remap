@@ -35,3 +35,4 @@ fmt:
 
 bin:	self
 	@GOPATH=$(GOPATH) go build -o bin/wof-remap cmd/wof-remap.go
+	@GOPATH=$(GOPATH) go build -o bin/wof-contract cmd/wof-contract.go
