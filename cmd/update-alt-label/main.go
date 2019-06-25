@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/whosonfirst/go-whosonfirst-index"
+	"github.com/facebookarchive/atomicfile"
 	"github.com/tidwall/gjson"
-	"github.com/tidwall/sjson"	
+	"github.com/tidwall/sjson"
+	"github.com/whosonfirst/go-whosonfirst-index"
 	"io"
 	"io/ioutil"
 	"log"
@@ -22,7 +23,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	cb := func(fh io.Reader, ctx context.Context, args ...interface{}) error {
 
 		path, err := index.PathForContext(ctx)
@@ -32,11 +33,11 @@ func main() {
 		}
 
 		fname := filepath.Base(path)
-		
-		if !re_alt.MatchString(fname){
+
+		if !re_alt.MatchString(fname) {
 			return nil
 		}
-		
+
 		body, err := ioutil.ReadAll(fh)
 
 		if err != nil {
@@ -45,10 +46,10 @@ func main() {
 
 		label_rsp := gjson.GetBytes(body, "properties.wof:alt_label")
 
-		if label_rsp.Exists(){
+		if label_rsp.Exists() {
 			return nil
 		}
-		
+
 		m := re_alt.FindStringSubmatch(fname)
 		alt_label := m[1]
 
@@ -57,9 +58,20 @@ func main() {
 		if err != nil {
 			return err
 		}
-		
-		log.Println("UPDATE", fname)
-		return nil
+
+		out, err := atomicfile.New(path, 0644)
+
+		if err != nil {
+			return err
+		}
+
+		_, err = out.Write(body)
+
+		if err != nil {
+			return err
+		}
+
+		return out.Close()
 	}
 
 	idx, err := index.NewIndexer("repo", cb)
@@ -76,5 +88,5 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	
+
 }
