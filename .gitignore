@@ -8,3 +8,4 @@ bin
 *.json
 .travis.yml
 *.sh
+!alt_label.sh

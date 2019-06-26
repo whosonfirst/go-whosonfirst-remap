@@ -1,5 +1,9 @@
 # go-whosonfirst-remap
 
+## Important
+
+This code is for internal use only and will be deleted soon.
+
 ## Misc tools
 
 ### Create all the repos
