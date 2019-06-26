@@ -5,6 +5,7 @@ import mapzen.whosonfirst.export
 
 import os
 import logging
+logging.basicConfig(level=logging.FATAL)
 
 def crawl_filelist(root, filelist):
 
@@ -66,6 +67,7 @@ if __name__ == "__main__":
         if len(alt_parts) > 2:
             kwargs["extras"] = alt_parts[2:]
 
-        print kwargs
-        
-        exporter.export_alt_feature(feature, **kwargs)
+        try:
+            exporter.export_alt_feature(feature, **kwargs)
+        except Exception, e:
+            print "ERROR", props["wof:id"], e
